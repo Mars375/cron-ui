@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>{{ job.name }}</h1>
+    <p>{{ job.description }}</p>
+  </div>
+  <span class="pill {{ job.status }}">{{ job.status }}</span>
+</section>
+
+<section class="stats-grid detail-grid">
+  <article class="card"><span>Runs</span><strong>{{ job.total_runs }}</strong></article>
+  <article class="card"><span>Fails</span><strong>{{ job.failed_runs }}</strong></article>
+  <article class="card"><span>Succès</span><strong>{{ job.success_rate }}%</strong></article>
+  <article class="card"><span>Next</span><strong>{{ job.next_run_at or '—' }}</strong></article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Métadonnées</h2>
+  </div>
+  <dl class="meta-grid">
+    <div><dt>Job ID</dt><dd>{{ job.job_id }}</dd></div>
+    <div><dt>Activé</dt><dd>{{ 'oui' if job.enabled else 'non' }}</dd></div>
+    <div><dt>Session target</dt><dd>{{ job.session_target or '—' }}</dd></div>
+    <div><dt>Schedule</dt><dd>{{ job.schedule_expression or job.schedule.kind or '—' }}</dd></div>
+    <div><dt>Timezone</dt><dd>{{ job.schedule_timezone or '—' }}</dd></div>
+    <div><dt>Dernière synchro</dt><dd>{{ job.last_sync_at or '—' }}</dd></div>
+  </dl>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Exécutions récentes</h2>
+  </div>
+  {% if executions %}
+    <div class="stack">
+      {% for execution in executions %}
+        <article class="row stack-row">
+          <div>
+            <strong>{{ execution.status }}</strong>
+            <div class="muted">{{ execution.started_at or execution.created_at }}</div>
+          </div>
+          <div>
+            <div>{{ execution.duration_ms }} ms</div>
+            <div class="muted">exit {{ execution.exit_code }}</div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Pas d'exécutions pour ce job.</p>
+  {% endif %}
+</section>
+{% endblock %}

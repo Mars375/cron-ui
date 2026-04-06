@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Jobs</h1>
+    <p>Filtre les jobs par statut ou cherche un nom précis.</p>
+  </div>
+  <form class="filters" method="get" action="/jobs">
+    <input type="search" name="q" value="{{ query }}" placeholder="Rechercher...">
+    <select name="status">
+      <option value="">Tous les statuts</option>
+      {% for value in ['healthy', 'failing', 'struggling', 'disabled'] %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+    <button class="button" type="submit">Filtrer</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>{{ jobs|length }} job(s)</h2>
+  </div>
+  {% if jobs %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Statut</th>
+            <th>Runs</th>
+            <th>Dernier run</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+          <tr>
+            <td>
+              <strong>{{ job.name }}</strong>
+              <div class="muted">{{ job.job_id }}</div>
+            </td>
+            <td><span class="pill {{ job.status }}">{{ job.status }}</span></td>
+            <td>{{ job.total_runs }} / {{ job.failed_runs }}</td>
+            <td>{{ job.last_run_at or '—' }}</td>
+            <td><a href="/jobs/{{ job.job_id }}">Détail</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">Aucun job ne correspond au filtre.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Dashboard cron</h1>
+    <p>Vue d'ensemble des jobs, des échecs récents et du statut de synchronisation.</p>
+  </div>
+  <button class="button" hx-post="/api/refresh" hx-swap="none" hx-on:htmx:afterRequest="window.location.reload()">
+    Refresh
+  </button>
+</section>
+
+<section class="stats-grid">
+  <article class="card"><span>Jobs</span><strong>{{ stats.job_count }}</strong></article>
+  <article class="card"><span>Actifs</span><strong>{{ stats.enabled_count }}</strong></article>
+  <article class="card"><span>Échecs</span><strong>{{ stats.failure_count }}</strong></article>
+  <article class="card"><span>Succès</span><strong>{{ stats.success_rate }}%</strong></article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Échecs récents</h2>
+    <a href="/jobs">Voir tous les jobs</a>
+  </div>
+  {% if failed_jobs %}
+    <div class="stack">
+      {% for job in failed_jobs %}
+        <a class="row link-row" href="/jobs/{{ job.job_id }}">
+          <div>
+            <strong>{{ job.name }}</strong>
+            <div class="muted">{{ job.description }}</div>
+          </div>
+          <span class="pill danger">{{ job.status }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Aucun job en alerte pour le moment.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Dernières exécutions</h2>
+  </div>
+  {% if recent_executions %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Statut</th>
+            <th>Durée</th>
+            <th>Démarré</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for execution in recent_executions %}
+          <tr>
+            <td><a href="/jobs/{{ execution.job_id }}">{{ execution.job_name or execution.job_id }}</a></td>
+            <td><span class="pill {{ 'success' if execution.success else 'danger' }}">{{ execution.status }}</span></td>
+            <td>{{ execution.duration_ms }} ms</td>
+            <td>{{ execution.started_at or execution.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">Pas encore d'exécutions enregistrées.</p>
+  {% endif %}
+</section>
+{% endblock %}
