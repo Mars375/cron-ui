@@ -29,8 +29,8 @@
 - **Phase**: VEILLE
 - **GitHub**: https://github.com/Mars375/cron-ui
 - **Coverage**: 95% (44 tests)
-- **Dernière validation**: `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK, GitHub Actions `CI` vert sur `main` (run `24206728577`: pytest + smoke Docker) après correction de l'install CI et des permissions SQLite en bind mount.
-- **Prochaine action**: VEILLE active, surveiller issues GitHub / dérive dépendances / tuning léger, puis remplacer les actions Node 20 avant l'échéance GitHub.
+- **Dernière validation**: GitHub Actions `CI` vert sur `main` après maintenance workflow Node 24-ready (run `24206976530`: `test` + `docker-smoke`), en plus des validations locales `python3 -m pytest -q` (44 passed) et `./test-docker.sh` OK.
+- **Prochaine action**: VEILLE active, surveiller issues GitHub / dérive dépendances, avec prochain micro-chantier probable: évaluer un bump sûr `uvicorn 0.42.0 -> 0.44.0` et `pytest 9.0.2 -> 9.0.3`.
 - **Readiness**: V1 fonctionnelle, self-hostable, en maintenance active
 
 ## TECH STACK VERIFIÉE
