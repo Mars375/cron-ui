@@ -29,8 +29,8 @@
 - **Phase**: VEILLE
 - **GitHub**: https://github.com/Mars375/cron-ui
 - **Coverage**: 95% (44 tests)
-- **Dernière validation**: refactor FastAPI lifespan OK, `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK, workflow GitHub Actions `CI` ajouté (pytest + smoke Docker)
-- **Prochaine action**: Surveiller les premiers runs GitHub Actions, puis revenir en VEILLE active sur issues GitHub / dérive dépendances / tuning léger
+- **Dernière validation**: `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK, GitHub Actions `CI` vert sur `main` (run `24206728577`: pytest + smoke Docker) après correction de l'install CI et des permissions SQLite en bind mount.
+- **Prochaine action**: VEILLE active, surveiller issues GitHub / dérive dépendances / tuning léger, puis remplacer les actions Node 20 avant l'échéance GitHub.
 - **Readiness**: V1 fonctionnelle, self-hostable, en maintenance active
 
 ## TECH STACK VERIFIÉE
