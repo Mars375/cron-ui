@@ -15,7 +15,7 @@
 - [x] Tests unitaires complets (96% coverage, 42 tests) ✅
 - [x] Documentation technique complète (README) ✅
 - [x] Configuration production (Dockerfile, docker-compose, script de validation) ✅
-- [ ] Validation CI/CD pipeline
+- [x] Validation CI/CD pipeline ✅
 - [ ] Performance tuning
 
 ## P3 (ÉVOLUTIVITÉ V1→V2)
@@ -29,8 +29,8 @@
 - **Phase**: VEILLE
 - **GitHub**: https://github.com/Mars375/cron-ui
 - **Coverage**: 95% (44 tests)
-- **Dernière validation**: refactor FastAPI lifespan OK, `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK
-- **Prochaine action**: Valider une CI légère (tests + smoke Docker) et surveiller issues GitHub / dérive dépendances
+- **Dernière validation**: refactor FastAPI lifespan OK, `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK, workflow GitHub Actions `CI` ajouté (pytest + smoke Docker)
+- **Prochaine action**: Surveiller les premiers runs GitHub Actions, puis revenir en VEILLE active sur issues GitHub / dérive dépendances / tuning léger
 - **Readiness**: V1 fonctionnelle, self-hostable, en maintenance active
 
 ## TECH STACK VERIFIÉE

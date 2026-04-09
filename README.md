@@ -58,6 +58,15 @@ Or:
 python app.py
 ```
 
+## Quality checks
+
+```bash
+python -m pytest -q
+./test-docker.sh
+```
+
+GitHub Actions runs the same lightweight CI on `push` and `pull_request`: pytest first, then a Docker smoke test.
+
 ## Environment
 
 - `CRON_UI_DB_PATH`, SQLite path, default `./cron-ui.sqlite3`
