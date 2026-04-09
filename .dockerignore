@@ -25,6 +25,9 @@ wheels/
 *.egg
 MANIFEST
 
+.venv/
+.venv*/
+
 # Testing
 .pytest_cache/
 htmlcov/

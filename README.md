@@ -65,7 +65,7 @@ python -m pytest -q
 ./test-docker.sh
 ```
 
-GitHub Actions runs the same lightweight CI on `push` and `pull_request`: pytest first, then a Docker smoke test.
+GitHub Actions runs the same lightweight CI on `push` and `pull_request`: pytest first, then a Docker smoke test. The current veille baseline is validated with `uvicorn 0.44.0` and `pytest 9.0.3`.
 
 The Docker image now prepares the SQLite parent directory at startup, then drops privileges to the bundled `app` user. That avoids fresh bind-mount permission failures with `./data`.
 
