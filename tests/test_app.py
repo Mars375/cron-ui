@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -221,3 +223,24 @@ class TestHealthEndpoints:
             resp = client.get("/api/health")
         assert resp.status_code == 200
         assert resp.json()["status"] == "healthy"
+
+
+class SlowCollector(DummyCollector):
+    def get_jobs(self):
+        time.sleep(0.2)
+        return super().get_jobs()
+
+    def get_executions(self):
+        time.sleep(0.2)
+        return super().get_executions()
+
+
+class TestStartupResilience:
+    def test_startup_timeout_falls_back_to_demo_data(self, tmp_path):
+        app = create_app(tmp_path / "test.db", collector=SlowCollector(), startup_refresh_timeout=0.05)
+        with TestClient(app) as client:
+            health = client.get("/health")
+            stats = client.get("/api/stats")
+        assert health.status_code == 200
+        assert stats.status_code == 200
+        assert stats.json()["job_count"] >= 1

@@ -10,6 +10,41 @@ Self-hostable dashboard for OpenClaw cron jobs.
 - HTMX-powered refresh action
 - Basic health and JSON APIs
 
+## Docker
+
+### Build and run with Docker Compose
+
+```bash
+docker compose up -d --build
+curl http://localhost:8906/
+```
+
+### Build and run manually
+
+```bash
+# Build image
+docker build -t cron-ui .
+
+# Run container
+docker run -d \
+  --name cron-ui \
+  -p 8906:8906 \
+  -v $(pwd)/data:/app/data \
+  cron-ui
+```
+
+### Environment variables for Docker
+
+```bash
+docker run -d \
+  --name cron-ui \
+  -p 8906:8906 \
+  -e CRON_UI_DB_PATH=/app/data/cron-ui.sqlite3 \
+  -e OPENCLAW_CRON_URL=http://host.docker.internal:8905 \
+  -v $(pwd)/data:/app/data \
+  cron-ui
+```
+
 ## Run
 
 ```bash

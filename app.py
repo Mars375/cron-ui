@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
@@ -20,9 +23,17 @@ from database import CronDatabase
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DB_PATH = Path(os.getenv("CRON_UI_DB_PATH", BASE_DIR / "cron-ui.sqlite3"))
 DEFAULT_COLLECTOR_URL = os.getenv("OPENCLAW_CRON_URL", "http://localhost:8905")
+DEFAULT_STARTUP_REFRESH_TIMEOUT = float(os.getenv("CRON_UI_STARTUP_REFRESH_TIMEOUT", "3"))
+DEFAULT_HEALTHCHECK_TIMEOUT = float(os.getenv("CRON_UI_HEALTHCHECK_TIMEOUT", "1"))
+
+logger = logging.getLogger(__name__)
 
 
-def create_app(db_path: str | Path = DEFAULT_DB_PATH, collector: CronCollector | None = None) -> FastAPI:
+def create_app(
+    db_path: str | Path = DEFAULT_DB_PATH,
+    collector: CronCollector | None = None,
+    startup_refresh_timeout: float = DEFAULT_STARTUP_REFRESH_TIMEOUT,
+) -> FastAPI:
     database = CronDatabase(db_path)
     collector = collector or CronCollector(DEFAULT_COLLECTOR_URL)
     templates = Jinja2Templates(directory=str(BASE_DIR / "ui" / "templates"))
@@ -30,6 +41,7 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH, collector: CronCollector |
     app = FastAPI(title="cron-ui", version="0.1.0", description="Dashboard OpenClaw Cron Jobs")
     app.state.database = database
     app.state.collector = collector
+    app.state.refresh_task = None
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "ui" / "static")), name="static")
 
     async def refresh_cache() -> dict[str, int]:
@@ -43,10 +55,45 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH, collector: CronCollector |
             database.seed_demo_data()
         return {"jobs": len(jobs), "executions": len(executions)}
 
+    async def background_refresh() -> None:
+        try:
+            await asyncio.wait_for(refresh_cache(), timeout=startup_refresh_timeout)
+        except asyncio.TimeoutError:
+            logger.warning("Initial cache refresh timed out after %.1fs", startup_refresh_timeout)
+        except Exception as exc:  # pragma: no cover - defensive startup fallback
+            logger.warning("Initial cache refresh failed: %s", exc)
+
+    async def collector_status() -> dict[str, Any]:
+        try:
+            return await asyncio.wait_for(
+                asyncio.to_thread(collector.health_check),
+                timeout=DEFAULT_HEALTHCHECK_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            return {
+                "status": "unhealthy",
+                "base_url": getattr(collector, "base_url", DEFAULT_COLLECTOR_URL),
+                "error": f"health check timed out after {DEFAULT_HEALTHCHECK_TIMEOUT:.1f}s",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
     @app.on_event("startup")
     async def startup_event() -> None:
         database.initialize()
-        await refresh_cache()
+        if database.job_count() == 0:
+            database.seed_demo_data()
+        app.state.refresh_task = asyncio.create_task(background_refresh())
+
+    @app.on_event("shutdown")
+    async def shutdown_event() -> None:
+        refresh_task = getattr(app.state, "refresh_task", None)
+        if refresh_task and not refresh_task.done():
+            refresh_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await refresh_task
+        close = getattr(collector, "close", None)
+        if callable(close):
+            await asyncio.to_thread(close)
 
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request) -> HTMLResponse:
@@ -135,7 +182,7 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH, collector: CronCollector |
         return {
             "status": "healthy",
             "database": database.health_check(),
-            "collector": collector.health_check(),
+            "collector": await collector_status(),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 

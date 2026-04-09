@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -71,13 +72,13 @@ class CronDatabase:
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON cron_jobs(status);
         CREATE INDEX IF NOT EXISTS idx_jobs_updated_at ON cron_jobs(updated_at);
         """
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             conn.executescript(schema)
             conn.commit()
 
     def store_job(self, job: dict[str, Any]) -> None:
         row = self._normalize_job(job)
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             conn.execute(
                 """
                 INSERT INTO cron_jobs (
@@ -122,7 +123,7 @@ class CronDatabase:
 
     def store_execution(self, execution: dict[str, Any]) -> None:
         row = self._normalize_execution(execution)
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             conn.execute(
                 """
                 INSERT INTO executions (
@@ -154,7 +155,7 @@ class CronDatabase:
             conn.commit()
 
     def get_all_jobs(self) -> list[dict[str, Any]]:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             rows = conn.execute(
                 "SELECT * FROM cron_jobs ORDER BY COALESCE(updated_at, last_sync_at) DESC, name ASC"
             ).fetchall()
@@ -165,7 +166,7 @@ class CronDatabase:
         return jobs
 
     def get_job(self, job_id: str) -> dict[str, Any] | None:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             row = conn.execute("SELECT * FROM cron_jobs WHERE job_id = ?", (job_id,)).fetchone()
         if row is None:
             return None
@@ -174,7 +175,7 @@ class CronDatabase:
         return job
 
     def get_job_executions(self, job_id: str, limit: int = 25) -> list[dict[str, Any]]:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             rows = conn.execute(
                 """
                 SELECT * FROM executions
@@ -187,7 +188,7 @@ class CronDatabase:
         return [self._execution_from_row(row) for row in rows]
 
     def get_executions(self, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             rows = conn.execute(
                 """
                 SELECT * FROM executions
@@ -206,7 +207,7 @@ class CronDatabase:
         return jobs[:limit]
 
     def get_stats(self) -> dict[str, Any]:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             job_count = conn.execute("SELECT COUNT(*) FROM cron_jobs").fetchone()[0]
             enabled_count = conn.execute("SELECT COUNT(*) FROM cron_jobs WHERE enabled = 1").fetchone()[0]
             disabled_count = conn.execute("SELECT COUNT(*) FROM cron_jobs WHERE enabled = 0").fetchone()[0]
@@ -239,11 +240,11 @@ class CronDatabase:
         }
 
     def job_count(self) -> int:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             return conn.execute("SELECT COUNT(*) FROM cron_jobs").fetchone()[0]
 
     def execution_count(self) -> int:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             return conn.execute("SELECT COUNT(*) FROM executions").fetchone()[0]
 
     def seed_demo_data(self) -> None:
