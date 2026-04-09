@@ -67,6 +67,8 @@ python -m pytest -q
 
 GitHub Actions runs the same lightweight CI on `push` and `pull_request`: pytest first, then a Docker smoke test.
 
+The Docker image now prepares the SQLite parent directory at startup, then drops privileges to the bundled `app` user. That avoids fresh bind-mount permission failures with `./data`.
+
 ## Environment
 
 - `CRON_UI_DB_PATH`, SQLite path, default `./cron-ui.sqlite3`
