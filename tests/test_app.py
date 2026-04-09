@@ -224,6 +224,15 @@ class TestHealthEndpoints:
         assert resp.status_code == 200
         assert resp.json()["status"] == "healthy"
 
+    def test_shutdown_closes_collector(self, tmp_path):
+        collector = DummyCollector()
+        collector.close = MagicMock()
+        app = create_app(tmp_path / "test.db", collector=collector)
+        with TestClient(app) as client:
+            resp = client.get("/health")
+        assert resp.status_code == 200
+        collector.close.assert_called_once()
+
 
 class SlowCollector(DummyCollector):
     def get_jobs(self):

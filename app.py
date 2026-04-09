@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from contextlib import suppress
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -38,7 +38,30 @@ def create_app(
     collector = collector or CronCollector(DEFAULT_COLLECTOR_URL)
     templates = Jinja2Templates(directory=str(BASE_DIR / "ui" / "templates"))
 
-    app = FastAPI(title="cron-ui", version="0.1.0", description="Dashboard OpenClaw Cron Jobs")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        database.initialize()
+        if database.job_count() == 0:
+            database.seed_demo_data()
+        app.state.refresh_task = asyncio.create_task(background_refresh())
+        try:
+            yield
+        finally:
+            refresh_task = getattr(app.state, "refresh_task", None)
+            if refresh_task and not refresh_task.done():
+                refresh_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await refresh_task
+            close = getattr(collector, "close", None)
+            if callable(close):
+                await asyncio.to_thread(close)
+
+    app = FastAPI(
+        title="cron-ui",
+        version="0.1.0",
+        description="Dashboard OpenClaw Cron Jobs",
+        lifespan=lifespan,
+    )
     app.state.database = database
     app.state.collector = collector
     app.state.refresh_task = None
@@ -76,24 +99,6 @@ def create_app(
                 "error": f"health check timed out after {DEFAULT_HEALTHCHECK_TIMEOUT:.1f}s",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-
-    @app.on_event("startup")
-    async def startup_event() -> None:
-        database.initialize()
-        if database.job_count() == 0:
-            database.seed_demo_data()
-        app.state.refresh_task = asyncio.create_task(background_refresh())
-
-    @app.on_event("shutdown")
-    async def shutdown_event() -> None:
-        refresh_task = getattr(app.state, "refresh_task", None)
-        if refresh_task and not refresh_task.done():
-            refresh_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await refresh_task
-        close = getattr(collector, "close", None)
-        if callable(close):
-            await asyncio.to_thread(close)
 
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request) -> HTMLResponse:

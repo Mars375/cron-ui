@@ -28,9 +28,9 @@
 ## STATUT ACTUEL
 - **Phase**: VEILLE
 - **GitHub**: https://github.com/Mars375/cron-ui
-- **Coverage**: 96% (42 tests)
-- **Dernière validation**: Docker build + compose OK, dashboard et /health OK
-- **Prochaine action**: Traiter les warnings pytest (FastAPI lifespan)
+- **Coverage**: 95% (44 tests)
+- **Dernière validation**: refactor FastAPI lifespan OK, `python3 -m pytest -q` (44 passed), `./test-docker.sh` OK
+- **Prochaine action**: Valider une CI légère (tests + smoke Docker) et surveiller issues GitHub / dérive dépendances
 - **Readiness**: V1 fonctionnelle, self-hostable, en maintenance active
 
 ## TECH STACK VERIFIÉE
